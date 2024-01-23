@@ -1,6 +1,9 @@
-import { connectToDb, generateErrorMessage, generateSuccessMessage } from "@/lib/helper";
+import {
+  connectToDb,
+  generateErrorMessage,
+  generateSuccessMessage,
+} from "@/lib/helpers";
 import prisma from "@/prisma";
-
 
 export const GET = async (
   req: Request,
@@ -11,11 +14,11 @@ export const GET = async (
     await connectToDb();
     const category = await prisma.category.findFirst({
       where: { id },
-      include: { _count: true, blog: true },
+      include: { _count: true, blog:true },
     });
     return generateSuccessMessage({ category }, 200);
   } catch (error) {
-   generateErrorMessage( {error }, 500);
+    generateErrorMessage({ error }, 500);
   } finally {
     await prisma.$disconnect();
   }

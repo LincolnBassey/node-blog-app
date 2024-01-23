@@ -1,30 +1,32 @@
-import { connectToDb, generateErrorMessage, generateSuccessMessage } from "@/lib/helper"
+import {
+  connectToDb,
+  generateErrorMessage,
+  generateSuccessMessage,
+} from "@/lib/helpers";
 import prisma from "@/prisma";
 import { NextResponse } from "next/server";
 
-
 export const GET = async () => {
-  try{
+  try {
     await connectToDb();
-    const categories = await prisma.category.findMany()
-    return generateSuccessMessage({categories}, 200)
-  } catch(error){
-return generateErrorMessage({error},500);
-  }finally {
-await prisma.$disconnect()
+    const categories = await prisma.category.findMany();
+    return generateSuccessMessage({ categories }, 200);
+  } catch (error) {
+    return generateErrorMessage({ error }, 500);
+  } finally {
+    await prisma.$disconnect();
   }
 };
 
-
 export const POST = async (req: Request) => {
-  try{
-    const{name} = await req.json();
+  try {
+    const { name } = await req.json();
     await connectToDb();
-    const category = await prisma.category.create({data:{name}})
-    return generateSuccessMessage({category}, 200)
-  } catch(error){
-return generateErrorMessage({error},500);
-  }finally {
-await prisma.$disconnect()
+    const category = await prisma.category.create({ data: { name } });
+    return generateSuccessMessage({ category }, 200);
+  } catch (error) {
+    return generateErrorMessage({ error }, 500);
+  } finally {
+    await prisma.$disconnect();
   }
 };

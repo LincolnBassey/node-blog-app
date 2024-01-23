@@ -23,3 +23,17 @@ export const connectToDb = async () => {
     {message: "Error", ...data}, {status,statusText:"ERROR"}
   );
  };
+
+
+
+// ============ to get 6 blog post on homesection
+ export  const getAllBlogs = async (count?:number)=>{
+  const res = await fetch("http://localhost:3000/api/blogs",{ cache:'no-store',});
+
+
+  const data=await res.json();
+  if(count){
+    return data.blogs.slice(0,6);
+  }
+  return data.blogs;
+};

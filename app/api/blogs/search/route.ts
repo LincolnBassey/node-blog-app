@@ -5,21 +5,20 @@ import {
 } from "@/lib/helpers";
 import prisma from "@/prisma";
 
-export const GET = async (
-  req: Request,
-  { params }: { params: { id: string } }
-) => {
+export const GET = async (req: Request)=>{
+const searchTitle= new URL(req.url).searchParams.get("title"); 
+  
   try {
-    const id = params.id;
+
     await connectToDb();
-    const user = await prisma.user.findFirst({
-      where: { id },
-      include: { _count: true, Blog: true },
+    const blogs = await prisma.blog.findMany({
+      where:{title:{contains: searchTitle ?? ""}}
     });
-    return generateSuccessMessage({ user }, 200);
+    return generateSuccessMessage({ blogs }, 200);
   } catch (error) {
     generateErrorMessage({ error }, 500);
   } finally {
     await prisma.$disconnect();
   }
+
 };

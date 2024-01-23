@@ -1,30 +1,98 @@
-import { connectToDb, generateErrorMessage, generateSuccessMessage } from "@/lib/helper"
+import {
+  connectToDb,
+  generateErrorMessage,
+  generateSuccessMessage,
+} from "@/lib/helpers";
 import prisma from "@/prisma";
 import { NextResponse } from "next/server";
+import { UploadApiResponse, v2 } from "cloudinary";
+import { resolve } from "path";
 
+async function uploadImage(file: Blob) {
+  return new Promise<UploadApiResponse>(async (resolve, reject) => {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    v2.uploader
+      .upload_stream(
+        {
+          resource_type: "auto",
+          folder: "nextjs-full-stack-blog",
+        },
+        (err, result) => {
+          if (err) {
+            console.log(err);
+            return reject(err);
+          } else if (result) {
+            return resolve(result);
+          }
+        }
+      )
+      .end(buffer);
+  });
+}
 
 export const GET = async () => {
-  try{
+  try {
     await connectToDb();
     const blogs = await prisma.blog.findMany();
-    return generateSuccessMessage({blogs}, 200)
-  } catch(error){
-return generateErrorMessage({error},500);
-  }finally {
-await prisma.$disconnect()
+    return generateSuccessMessage({ blogs }, 200);
+  } catch (error) {
+    return generateErrorMessage({ error }, 500);
+  } finally {
+    await prisma.$disconnect();
   }
 };
 
-
 export const POST = async (req: Request) => {
-  try{
-    const{name} = await req.json();
-    await connectToDb();
-    const category = await prisma.category.create({data:{name}})
-    return generateSuccessMessage({category}, 200)
-  } catch(error){
-return generateErrorMessage({error},500);
-  }finally {
-await prisma.$disconnect()
+  v2.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    api_key: process.env.CLOUDINARY_API_SECRET,
+  });
+
+  try {
+    const formData = await req.formData();
+    const { title, description, location, userId, categoryId } = JSON.parse(
+      formData.get("postData") as string
+    );
+    if (!title || !userId || !description || !location || !categoryId) {
+      return generateErrorMessage({ reason: "invalid Data" }, 422);
+    }
+      const file = formData.get("image") as Blob | null;
+      let uploadedFile: UploadApiResponse | null = null;
+      if (file) {
+        uploadedFile = await uploadImage(file);
+      } else {
+        uploadedFile = null;
+      }
+      await connectToDb();
+      const user = await prisma.user.findFirst({ where: { id: userId } });
+      const category = await prisma.category.findFirst({
+        where: { id: categoryId },
+      });
+
+      if (!user || !category) {
+        return generateErrorMessage(
+          { reason: "Invalid User or Category Id" },
+          401
+        );
+      }
+
+      const blog = await prisma.blog.create({
+        data: {
+          title,
+          description,
+          location,
+          categoryId,
+          userId,
+          ImageUrl: uploadedFile?.url ?? null,
+        },
+      });
+
+      return generateSuccessMessage({ blog }, 201);
+    
+  } catch (error) {
+    return generateErrorMessage({error},500)
+  } finally {
+    await prisma.$disconnect()
   }
-}; 
+};

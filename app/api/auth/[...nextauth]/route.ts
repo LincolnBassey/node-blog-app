@@ -2,7 +2,7 @@ import NextAuth, { AuthOptions } from "next-auth";
 import GithubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { connectToDb } from "@/lib/helper";
+import { connectToDb } from "@/lib/helpers";
 import prisma from "@/prisma";
 import bcrypt from "bcrypt";
 
@@ -40,14 +40,13 @@ const authOptions: AuthOptions = {
             user.password
           );
 
-          if(!isPasswordCorrect){
+          if (!isPasswordCorrect) {
             return null;
           }
-          return{...user,id:user.id};
-
+          return { ...user, id: user.id };
         } catch (err) {
           return null;
-        } finally{
+        } finally {
           await prisma.$disconnect();
         }
       },
